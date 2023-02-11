@@ -10,14 +10,19 @@ service ServerRegistry {
 service Server {
     rpc JoinServer(Client) returns (Result);
     rpc LeaveSever(Client) returns (Result);
-    rpc PublishArticle(ArticlePublishRequest) returns (Result);
+    rpc PublishArticle(ArticleRequest) returns (Result);
+    rpc GetArticle(ArticleRequest) returns(ArticleList);
 }
 
 message ServerList{
     repeated ServerMessage serverList = 1;
 }
 
-message ArticlePublishRequest {
+message ArticleList {
+    repeated Article articleList = 1;
+}
+
+message ArticleRequest {
     Client client = 1;
     Article article = 2;
 }
@@ -31,7 +36,6 @@ message ServerMessage {
     string address = 2;
     repeated Client clients = 3;
     int32 maximum_clients = 4;
-    repeated Article articles = 5;
 }
 
 message Article {
