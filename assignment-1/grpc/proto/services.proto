@@ -8,7 +8,7 @@ service ServerRegistry {
 }
 
 service Server {
-    rpc JoinServer(ServerMessage) returns (Result);
+    rpc JoinServer(Client) returns (Result);
     rpc LeaveSever(Client) returns (Result);
     rpc PublishArticle(ArticlePublishRequest) returns (Result);
 }
