@@ -56,7 +56,7 @@ class server_registry:
         if (request['request_type']=='register'):
             self.register(request['arguments'])
         elif (request['request_type']=='get_server_list'):
-            self.get_server_list()
+            self.get_server_list(request['arguments'])
     
 
     def register(self,args):
@@ -70,8 +70,10 @@ class server_registry:
         body=json.dumps({'request_type':'register', 'response':status}))
     
 
-    def get_server_list(self):
-        pass
+    def get_server_list(self,args):
+        print(f"SERVER LIST REQUEST FROM {args['address']} [ADDRESS]")
+        self.channel.basic_publish( exchange=self.exchange_name, routing_key=args['address'], 
+        body=json.dumps({'request_type':'get_server_list', 'response':self.server_list}))
 
 
 def main():

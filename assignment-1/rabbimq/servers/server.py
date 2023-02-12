@@ -9,6 +9,11 @@ class server:
     
     # all the connection initialisation for RabbitMQ
     def __init__(self):
+        # server attributes
+        self.MAXCLIENTS=10
+        self.CLIENTELE=[]
+        self.current_clients=0
+        
         # all the important namings
         self.exchange_name='discord'
         self.registry_queue_name='registry_request'
@@ -32,6 +37,7 @@ class server:
             self.channel.start_consuming()
         except KeyboardInterrupt:
             self.channel.stop_consuming()
+        self.consumer_thread.join()
 
 
     def setup_server_queue(self):
@@ -56,11 +62,46 @@ class server:
         request=json.loads(body)
         if (request['request_type']=='register'):
             print('REGISTER REQUEST: ',request['response'])
-        
+        elif (request['request_type']=='join_server'):
+            self.join_server(request['arguments']['unique_id'])
+        elif (request['request_type']=='leave_server'):
+            self.leave_server(request['arguments']['unique_id'])
+
+
+    def leave_server(self, client_uuid):
+        print(f'LEAVE REQUEST FROM {client_uuid}')
+        status='FAIL'
+        try:
+            status='SUCCESS'
+            if(client_uuid in self.CLIENTELE):
+                self.CLIENTELE.remove(client_uuid)
+                self.current_clients-=1
+        except:
+            pass
+        self.channel.basic_publish( exchange=self.exchange_name, routing_key=client_uuid, 
+        body=json.dumps({'request_type':'leave_server', 'response':status}))
+
+
+    def join_server(self, client_uuid):
+        print(f'JOIN REQUEST FROM {client_uuid}')
+        status='FAIL'
+        try:
+            if (client_uuid in self.CLIENTELE):
+                status='SUCCESS'
+            else:
+                if (self.current_clients<self.MAXCLIENTS):
+                    status='SUCCESS'
+                    self.CLIENTELE.append(client_uuid)
+                    self.current_clients+=1
+        except:
+            pass
+        self.channel.basic_publish( exchange=self.exchange_name, routing_key=client_uuid, 
+        body=json.dumps({'request_type':'join_server', 'response':status}))
+    
 
     def register(self):
         self.server_name =input("INPUT NAME OF THE SERVER: ")
-        message={
+        request={
             'request_type':'register',
             'arguments': {
                 'name': self.server_name,
@@ -70,7 +111,7 @@ class server:
         self.channel.basic_publish(
             exchange=self.exchange_name,
             routing_key=self.registry_queue_name,
-            body=json.dumps(message)
+            body=json.dumps(request)
         )
 
 
