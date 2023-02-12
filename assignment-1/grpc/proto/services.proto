@@ -4,14 +4,14 @@ package grpc_implementation;
 
 service ServerRegistry {
     rpc RegisterServer(ServerMessage) returns (Result);
-    rpc GetServerList(google.protobuf.Empty) returns (ServerList); 
+    rpc GetServerList(google.protobuf.Empty) returns (ServerList);
 }
 
 service Server {
     rpc JoinServer(Client) returns (Result);
     rpc LeaveSever(Client) returns (Result);
     rpc PublishArticle(ArticleRequest) returns (Result);
-    rpc GetArticle(ArticleRequest) returns(ArticleList);
+    rpc GetArticle(ArticleRequest) returns (ArticleList);
 }
 
 message ServerList{
@@ -28,14 +28,12 @@ message ArticleRequest {
 }
 
 message Client {
-    int32 id = 1;
+    string id = 1;
 }
 
 message ServerMessage {
     string name = 1;
     string address = 2;
-    repeated Client clients = 3;
-    int32 maximum_clients = 4;
 }
 
 message Article {
