@@ -4,6 +4,8 @@ import json
 import uuid
 from time import sleep
 from threading import Thread
+import pandas as pd
+import datetime
 
 class server:
     
@@ -13,6 +15,7 @@ class server:
         self.MAXCLIENTS=10
         self.CLIENTELE=[]
         self.current_clients=0
+        self.article_list=[]
         
         # all the important namings
         self.exchange_name='discord'
@@ -66,6 +69,50 @@ class server:
             self.join_server(request['arguments']['unique_id'])
         elif (request['request_type']=='leave_server'):
             self.leave_server(request['arguments']['unique_id'])
+        elif (request['request_type']=='publish_article'):
+            self.publish_article(request['arguments'])
+        elif (request['request_type']=='get_article'):
+            self.get_article(request['arguments'])
+
+    def get_article(self, args):
+        
+        def convert(x):
+            if(x==''):
+                return "<BLANK>"
+            else:
+                return x
+        print(f"ARTICLES REQUEST FROM {args['unique_id']} FOR {convert(args['type'])}, {convert(args['author'])}, {convert(args['time'])}")
+        try:
+            if(args['time'] != ""):
+                args['time']=datetime.datetime.strptime(args['time'],"%d/%m/%Y").date()
+            for itr in self.article_list:
+                if(
+                    (args['type']=='' or args['type']==itr.type) and
+                    (args['author']=='' or args['author']==itr.author) and
+                    (args['time']=='' or args['time']<=itr.time)
+                ):
+                    response={
+                        'type': itr.type,
+                        'author': itr.author,
+                        'time': itr.time.strftime("%d/%m/%Y"),
+                        'content': itr.content
+                    }
+                    self.channel.basic_publish( exchange=self.exchange_name, routing_key=args['unique_id'], 
+                    body=json.dumps({'request_type':'get_article', 'response':response}))
+        except:
+            self.channel.basic_publish( exchange=self.exchange_name, routing_key=args['unique_id'], 
+            body=json.dumps({'request_type':'get_article', 'response':'FAIL'}))
+
+    
+    def publish_article(self, args):
+        print(f"ARTICLES PUBLISH FROM {args['unique_id']}")
+        status='FAIL'
+        if(args['unique_id'] in self.CLIENTELE) and args['author']!="" and args['content']!="":
+            status='SUCCESS'
+            new_article=article(type=args['type'],author=args['author'],content=args['content'])
+            self.article_list.append(new_article)
+        self.channel.basic_publish( exchange=self.exchange_name, routing_key=args['unique_id'], 
+        body=json.dumps({'request_type':'publish_article', 'response':status}))
 
 
     def leave_server(self, client_uuid):
@@ -114,6 +161,14 @@ class server:
             body=json.dumps(request)
         )
 
+
+class article:
+
+    def __init__(self,type,author,content):
+        self.type=type
+        self.author=author
+        self.time=pd.Timestamp('now', tz='Asia/Kolkata').date()
+        self.content=content
 
 
 def main():

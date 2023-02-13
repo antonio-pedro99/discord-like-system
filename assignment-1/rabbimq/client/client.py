@@ -4,6 +4,7 @@ import json
 import uuid
 from time import sleep
 from threading import Thread, Lock
+import datetime 
 
 class client:
 
@@ -61,6 +62,10 @@ class client:
             self.join_server_success(request['response'])
         elif (request['request_type']=='leave_server'):
             self.leave_server_success(request['response'])
+        elif (request['request_type']=='publish_article'):
+            self.publish_article_success(request['response'])
+        elif (request['request_type']=='get_article'):
+            self.get_article_success(request['response'])
 
 
     def print_server_list(self, server_list):
@@ -71,10 +76,11 @@ class client:
         self.choosen_server_name = input("Enter name to join: ")
         # join to the server
         if(self.choosen_server_name in server_list.keys()):
-            self.join_server(server_list[self.choosen_server_name])
             self.joined_servers[self.choosen_server_name]=server_list[self.choosen_server_name]
+            self.join_server(server_list[self.choosen_server_name])
         else:
             print('Entered Name Does not exist')
+            self.terminal_lock.acquire()
         
     
     def join_server(self, server_address):
@@ -124,6 +130,90 @@ class client:
             self.joined_servers.pop(self.choosen_server_name)
         self.terminal_lock.release()
 
+    
+    def publish_article(self):
+        types = ['SPORTS', 'FASHION', 'POLITICS']
+        print("------------------")
+        print("Available Types\n1. SPORTS\n2. FASHION\n3. POLITICS")
+        choosen_type=int(input('Choose one Type: '))
+        if(choosen_type<=0 or choosen_type>3):
+            print("[ERROR] Invalid Type")
+            return
+        author=input("Enter Author's name: ")
+        # if(author==""):
+        #     print("[ERROR] Author's name cannot be empty")
+        #     return
+        content=input("Enter Content: ")
+        # if(content==""):
+        #     print("[ERROR] Content cannnot be empty")
+        print("JOINED SERVERS ARE:")
+        for server_name in self.joined_servers.keys():
+            print(server_name)
+        choosen_server=input("Enter sever name to publish article: ")
+        if(choosen_server not in self.joined_servers.keys()):
+            print("[ERROR] invalid server name.")
+            return
+        request={
+            'request_type':'publish_article',
+            'arguments': {
+                'unique_id': self.unique_id,
+                'type': types[choosen_type-1],
+                'author': author,
+                'content': content
+            }
+        }
+        self.channel.basic_publish(
+            exchange=self.exchange_name,
+            routing_key=self.joined_servers[choosen_server],
+            body=json.dumps(request)
+        )
+
+
+    def publish_article_success(self,status):
+        self.terminal_lock.acquire()
+        print(f"PUBLISHING REQUEST: {status}")
+        self.terminal_lock.release()
+
+
+    def get_article(self):
+        types = ['SPORTS', 'FASHION', 'POLITICS', '']
+        print("------------------")
+        print("Available Types\n1. SPORTS\n2. FASHION\n3. POLITICS\n4. ALL")
+        choosen_type=int(input('Choose one Type: '))
+        if(choosen_type<=0 or choosen_type>4):
+            print("[ERROR] Invalid Type")
+            return
+        author=input("Enter Author's name: ")
+        time=input("Enter start date (in DD/MM/YYYY): ") 
+        print("[ERROR] invalid start date entered")
+        print("JOINED SERVERS ARE:")
+        for server_name in self.joined_servers.keys():
+            print(server_name)
+        choosen_server=input("Enter sever name to get article: ")
+        if(choosen_server not in self.joined_servers.keys()):
+            print("[ERROR] invalid server name.")
+            return
+        request={
+            'request_type':'get_article',
+            'arguments': {
+                'unique_id': self.unique_id,
+                'type': types[choosen_type-1],
+                'author': author,
+                'time': time
+            }
+        }
+        self.channel.basic_publish(
+            exchange=self.exchange_name,
+            routing_key=self.joined_servers[choosen_server],
+            body=json.dumps(request)
+        )
+
+
+    def get_article_success(self,args):
+        self.terminal_lock.acquire()
+        print(args)
+        self.terminal_lock.release()
+
 
     def get_server_list(self):
         request={
@@ -142,18 +232,21 @@ class client:
     def show_menu(self):
         while True:
             self.terminal_lock.acquire()
-            print("---------MENU--------\n1. Get Server List/join server\n2. Get Joined Servers/Leave Server\n3. Exit\n")
+            print("\n---------MENU--------\n1. Get Server List/join server\n2. Get Joined Servers/Leave Server\n3. Publish Article\n4. Get Articles\n5. Exit\n")
             try:
                 choice=int(input('Choose one option: '))
-
                 if(choice==1):
                     self.get_server_list()
                 elif(choice==2):
                     self.leave_server()
                 elif(choice==3):
+                    self.publish_article()
+                elif(choice==4):
+                    self.get_article()
+                elif(choice==5):
                     self.channel.stop_consuming()
                     return
-            except:
+            except ValueError:
                 print("[ERROR] Incorrect Input")
             finally:
                 self.terminal_lock.release()
