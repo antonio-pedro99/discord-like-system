@@ -2,7 +2,7 @@
 import pika
 import json
 
-class server_registry:
+class ServerRegistry:
     
     # all the connection initialisation for RabbitMQ
     def __init__(self):
@@ -77,7 +77,7 @@ class server_registry:
 
 
 def main():
-    my_registry=server_registry()
+    my_registry=ServerRegistry()
     my_registry.start()
     
 

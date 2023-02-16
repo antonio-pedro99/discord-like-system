@@ -6,7 +6,7 @@ from time import sleep
 from threading import Thread, Lock
 import datetime 
 
-class client:
+class Client:
 
     # all the connection initialisation for RabbitMQ
     def __init__(self):
@@ -253,7 +253,7 @@ class client:
                 sleep(0.2)
 
 def main():
-    my_client=client()
+    my_client=Client()
     my_client.start()
     my_client.consumer_thread.join()
     

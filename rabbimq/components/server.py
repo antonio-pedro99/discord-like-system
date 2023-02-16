@@ -7,7 +7,7 @@ from threading import Thread
 import pandas as pd
 import datetime
 
-class server:
+class Server:
     
     # all the connection initialisation for RabbitMQ
     def __init__(self):
@@ -172,7 +172,7 @@ class article:
 
 
 def main():
-    my_server=server()
+    my_server=Server()
     my_server.start()
     
 
