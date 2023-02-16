@@ -19,6 +19,7 @@ class ServerRegistry:
     
     def start(self):
         # basic configuratons for RabbitMQ
+        print("STARTING SERVER REGISTRY...")
         connection=pika.BlockingConnection(pika.ConnectionParameters(self.broker_ip))
         self.channel=connection.channel()
         self.channel.exchange_declare(
@@ -46,9 +47,11 @@ class ServerRegistry:
             on_message_callback=self.handle_request
         )
         try:
+            print("[INFO] SERVER REGISTRY STARTED")
             self.channel.start_consuming()
         except KeyboardInterrupt:
             self.channel.stop_consuming()
+            print("[INFO] SERVER REGISTRY STOPED")
 
 
     def handle_request(self, ch, method, properties, body):
@@ -74,12 +77,3 @@ class ServerRegistry:
         print(f"SERVER LIST REQUEST FROM {args['address']} [ADDRESS]")
         self.channel.basic_publish( exchange=self.exchange_name, routing_key=args['address'], 
         body=json.dumps({'request_type':'get_server_list', 'response':self.server_list}))
-
-
-def main():
-    my_registry=ServerRegistry()
-    my_registry.start()
-    
-
-if __name__=='__main__':
-    main()

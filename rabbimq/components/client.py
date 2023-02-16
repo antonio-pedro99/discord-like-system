@@ -30,7 +30,6 @@ class Client:
         self.terminal_lock=Lock()
         self.consumer_thread=Thread(target=self.setup_client_queue)
         self.consumer_thread.start()
-        self.show_menu()
 
 
     def setup_client_queue(self):
@@ -210,9 +209,18 @@ class Client:
 
 
     def get_article_success(self,args):
-        self.terminal_lock.acquire()
-        print(args)
-        self.terminal_lock.release()
+        if(args=='FAIL'):
+            print(args)
+            self.terminal_lock.release()
+            return
+        elif(args=='START'):
+            self.terminal_lock.acquire()
+        elif(args=='END'):
+            self.terminal_lock.release()
+        else:
+            print("------------------")
+            print(f"Type: {args['type']}\nAuthor: {args['author']}\nDate: {args['time']}")
+            print(f"Content: {args['content']}")
 
 
     def get_server_list(self):
@@ -228,35 +236,3 @@ class Client:
             body=json.dumps(request)
         )
 
-
-    def show_menu(self):
-        while True:
-            self.terminal_lock.acquire()
-            print("\n---------MENU--------\n1. Get Server List/join server\n2. Get Joined Servers/Leave Server\n3. Publish Article\n4. Get Articles\n5. Exit\n")
-            try:
-                choice=int(input('Choose one option: '))
-                if(choice==1):
-                    self.get_server_list()
-                elif(choice==2):
-                    self.leave_server()
-                elif(choice==3):
-                    self.publish_article()
-                elif(choice==4):
-                    self.get_article()
-                elif(choice==5):
-                    self.channel.stop_consuming()
-                    return
-            except ValueError:
-                print("[ERROR] Incorrect Input")
-            finally:
-                self.terminal_lock.release()
-                sleep(0.2)
-
-def main():
-    my_client=Client()
-    my_client.start()
-    my_client.consumer_thread.join()
-    
-
-if __name__=='__main__':
-    main()

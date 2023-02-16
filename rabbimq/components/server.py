@@ -81,10 +81,13 @@ class Server:
                 return "<BLANK>"
             else:
                 return x
+        
         print(f"ARTICLES REQUEST FROM {args['unique_id']} FOR {convert(args['type'])}, {convert(args['author'])}, {convert(args['time'])}")
         try:
             if(args['time'] != ""):
                 args['time']=datetime.datetime.strptime(args['time'],"%d/%m/%Y").date()
+            self.channel.basic_publish( exchange=self.exchange_name, routing_key=args['unique_id'], 
+            body=json.dumps({'request_type':'get_article', 'response':'START'}))
             for itr in self.article_list:
                 if(
                     (args['type']=='' or args['type']==itr.type) and
@@ -102,6 +105,9 @@ class Server:
         except:
             self.channel.basic_publish( exchange=self.exchange_name, routing_key=args['unique_id'], 
             body=json.dumps({'request_type':'get_article', 'response':'FAIL'}))
+        finally:
+            self.channel.basic_publish( exchange=self.exchange_name, routing_key=args['unique_id'], 
+            body=json.dumps({'request_type':'get_article', 'response':'END'}))
 
     
     def publish_article(self, args):
@@ -169,12 +175,3 @@ class article:
         self.author=author
         self.time=pd.Timestamp('now', tz='Asia/Kolkata').date()
         self.content=content
-
-
-def main():
-    my_server=Server()
-    my_server.start()
-    
-
-if __name__=='__main__':
-    main()
