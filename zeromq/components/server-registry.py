@@ -39,7 +39,10 @@ class ServerRegistry:
             self.get_server_list(request['arguments'])
         
     def get_server_list(self, args):
-        print("COMING SOON")
+        print(f"SERVER LIST REQUEST FROM {args['address']} [ADDRESS]")
+    
+        response =json.dumps({'request_type':'get_server_list', 'response':self.server_list})
+        self.__registry_socket.send_string(response)
 
     def register_server(self, args):
         
