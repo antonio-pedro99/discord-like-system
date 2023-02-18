@@ -23,10 +23,10 @@ class Server:
             print(msg)
             reg_status = self.__register()
             if reg_status:
-                print("STARTING SERVER at", self.sock_port)
+                print("STARTING CLIENT at", self.sock_port)
                 self.__turn_up()
-                with mutex:
-                    while True:
+                while True:
+                    with mutex:
                         try:
                             response = self.__server_socket.recv()
                         except zmq.Again:
@@ -78,7 +78,8 @@ class Server:
             'request_type':'register',
             'arguments': {
                 'name': self.server_name,
-                'address': addr
+                'address': addr,
+                'status': 'up'
             }
         }
 
