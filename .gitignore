@@ -1,3 +1,4 @@
 /script
 /temp
 __pycache__
+/zeromq/.vscode
