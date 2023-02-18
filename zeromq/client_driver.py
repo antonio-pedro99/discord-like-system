@@ -22,7 +22,6 @@ def show_menu(client):
             elif(choice==4):
                 client.get_article()
             elif(choice==5):
-                client.channel.stop_consuming()
                 client.consumer_thread.join()
                 return
         except ValueError:

@@ -28,7 +28,8 @@ class Server:
                 while True:
                     with mutex:
                         try:
-                            response = self.__server_socket.recv()
+                            request = self.__server_socket.recv()
+                            self.__handle_request(request)
                         except zmq.Again:
                             print("No request")
 
@@ -55,8 +56,19 @@ class Server:
         
         #print("LISTEN at", addr)
 
-    def __handle_request(self):
-        pass
+    def __handle_request(self, req):
+        args = req.decode()
+        request=json.loads(args)
+        if (request['request_type']=='register'):
+            print('REGISTER REQUEST: ',request['response'])
+        elif (request['request_type']=='join_server'):
+            self.join_server(request['arguments']['unique_id'])
+        elif (request['request_type']=='leave_server'):
+            self.leave_server(request['arguments']['unique_id'])
+        elif (request['request_type']=='publish_article'):
+            self.publish_article(request['arguments'])
+        """ elif (request['request_type']=='get_article'):
+            self.get_article(request['arguments']) """
 
     def get_article(self):
         pass
@@ -66,10 +78,33 @@ class Server:
 
 
     def leave_server(self, client_uuid):
-        pass
+        print(f'LEAVE REQUEST FROM {client_uuid}')
+        status='FAIL'
+        try:
+            status='SUCCESS'
+            if(client_uuid in self.CLIENTELE):
+                self.CLIENTELE.remove(client_uuid)
+                self.current_clients-=1
+        except:
+            pass
+        response = json.dumps({'request_type':'leave_server', 'response':status})
+        self.__server_socket.send_string(response)
 
     def join_server(self, client_uuid):
-        pass
+        print(f'JOIN REQUEST FROM {client_uuid}')
+        status='FAIL'
+        try:
+            if (client_uuid in self.CLIENTELE):
+                status='SUCCESS'
+            else:
+                if (self.current_clients<self.MAXCLIENTS):
+                    status='SUCCESS'
+                    self.CLIENTELE.append(client_uuid)
+                    self.current_clients+=1
+        except:
+            pass
+        response =json.dumps({'request_type':'join_server', 'response':status})
+        self.__server_socket.send_string(response)
 
     def __register(self)->bool:
         self.server_name =input("INPUT NAME OF THE SERVER: ")
