@@ -44,13 +44,13 @@ class Client:
         if (request['request_type']=='get_server_list'):
             self.print_server_list(request['response'])
         elif (request['request_type']=='join_server'):
-            self.join_server_success(request['response'])
+            self.__join_server_success(request['response'])
         elif (request['request_type']=='leave_server'):
             self.__leave_server_success(request['response'])
         elif (request['request_type']=='publish_article'):
-            self.publish_article_success(request['response'])
+            self.__publish_article_success(request['response'])
         elif (request['request_type']=='get_article'):
-            self.get_article_success(request['response'])
+            self.__get_article_success(request['response'])
 
     def __print_server_list(self, server_list):
         print('----------------\nLIST OF AVAILABLE SERVERS')
@@ -73,6 +73,26 @@ class Client:
             self.joined_servers.pop(self.choosen_server_name)
         #self.terminal_lock.release()
 
+    def __get_article_success(self,args):
+        if(args=='FAIL'):
+            print(args)
+            return
+        else:
+            print("------------------")
+            print(f"Type: {args['type']}\nAuthor: {args['author']}\nDate: {args['time']}")
+            print(f"Content: {args['content']}")
+    
+    def __join_server_success(self, status):
+        print(f"JOINING REQUEST: {status}")
+        if(status=='FAIL'):
+            self.joined_servers.pop(self.choosen_server_name)
+
+
+    def __publish_article_success(self,status):
+        #self.terminal_lock.acquire()
+        print(f"PUBLISHING REQUEST: {status}")
+        #self.terminal_lock.release()
+
     def start(self):
         msg, status = self.__setup()
 
@@ -92,11 +112,75 @@ class Client:
         self.__send_request(server_address=server_address, request = json.dumps(request))
       
 
-    def publish_service(self):
-        pass
-    
+    def publish_article(self):
+        types = ['SPORTS', 'FASHION', 'POLITICS']
+        print("------------------")
+        print("Available Types\n1. SPORTS\n2. FASHION\n3. POLITICS")
+        choosen_type=int(input('Choose one Type: '))
+        
+        if(choosen_type<=0 or choosen_type>3):
+            print("[ERROR] Invalid Type")
+            return
+        author=input("Enter Author's name: ")
+       
+        content=input("Enter Content: ")
+       
+        print("JOINED SERVERS ARE:")
+        
+        for server_name in self.joined_servers.keys():
+            print(server_name)
+        
+        choosen_server=input("Enter sever name to publish article: ")
+        
+        if(choosen_server not in self.joined_servers.keys()):
+            print("[ERROR] invalid server name.")
+            return
+        
+        request = {
+            'request_type':'publish_article',
+            'arguments': {
+                'unique_id': self.unique_id,
+                'type': types[choosen_type-1],
+                'author': author,
+                'content': content
+            }
+        }
+        server_address = self.joined_servers[choosen_server]
+        self.__send_request(request = json.dumps(request), server_address = server_address)
+
+
     def get_article(self):
-        pass
+        types = ['SPORTS', 'FASHION', 'POLITICS', '']
+        print("------------------")
+        print("Available Types\n1. SPORTS\n2. FASHION\n3. POLITICS\n4. ALL")
+        choosen_type=int(input('Choose one Type: '))
+        
+        if(choosen_type<=0 or choosen_type>4):
+            print("[ERROR] Invalid Type")
+            return
+        
+        author=input("Enter Author's name: ")
+        
+        time = input("Enter start date (in DD/MM/YYYY): ") 
+        
+        print("JOINED SERVERS ARE:")
+        for server_name in self.joined_servers.keys():
+            print(server_name)
+        choosen_server=input("Enter sever name to get article: ")
+        if(choosen_server not in self.joined_servers.keys()):
+            print("[ERROR] invalid server name.")
+            return
+        request={
+            'request_type':'get_article',
+            'arguments': {
+                'unique_id': self.unique_id,
+                'type': types[choosen_type-1],
+                'author': author,
+                'time': time
+            }
+        }
+        server_address = self.joined_servers[choosen_server]
+        self.__send_request(request = json.dumps(request), server_address = server_address)
 
     def get_server_list(self):
         request={
@@ -129,7 +213,4 @@ class Client:
         server_address = self.joined_servers[server_name]
         self.__send_request(server_address = server_address, request =  json.dumps(request))
     
-    def join_server_success(self, status):
-        print(f"JOINING REQUEST: {status}")
-        if(status=='FAIL'):
-            self.joined_servers.pop(self.choosen_server_name)
+    
