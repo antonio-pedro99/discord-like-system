@@ -19,7 +19,7 @@ class ServerRegistryService(servicer.ServerRegistryServicer):
         status='FAIL'
         if(self.current_registered<self.MAXSERVERS):
             status='SUCCESS'
-            self.server_list[request.name]=request.address
+            self.server_list[request.name]=message.ServerMessage(name=request.name,address=request.address)
             self.current_registered+=1
         self.server_list_lock.release()
         return message.Result(status=status)
@@ -27,9 +27,10 @@ class ServerRegistryService(servicer.ServerRegistryServicer):
     def GetServerList(self, request, context):
         self.server_list_lock.acquire()
         print(f"SERVER LIST REQUEST FROM {request.id} [ADDRESS]")
-        all_servers=self.server_list.keys()
+        all_servers=message.ServerList()
+        all_servers.serverList.extend(list(self.server_list.values()))
         self.server_list_lock.release()
-        return message.ServerList(all_servers)
+        return all_servers
 
 
 def main():
@@ -42,7 +43,7 @@ def main():
         registry_server.start()
         registry_server.wait_for_termination()
     except KeyboardInterrupt:
-        print("CLOSING REGISTRY")
+        print("------CLOSING REGISTRY------")
         return
 
 

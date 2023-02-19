@@ -1,6 +1,8 @@
 import grpc
 import services_pb2 as message
 import services_pb2_grpc as servicer
+import pandas as pd
+import datetime
 from concurrent import futures
 from threading import Lock
 from port import get_new_port
@@ -25,7 +27,7 @@ class ServerService(servicer.ServerServicer):
             self.SetupServer()
             self.RegisterServer()
         except KeyboardInterrupt:
-            print('CLOSING REGISTRY')
+            print('-----CLOSING SERVER------')
             return
 
 
@@ -81,13 +83,33 @@ class ServerService(servicer.ServerServicer):
         status='FAIL'
         if(request.client.id in self.CLIENTELE) and request.article.author!="" and request.article.content!="":
             status='SUCCESS'
-            # new_article=message.Article() article(type=args['type'],author=args['author'],content=args['content'])
-            # self.article_list.append(new_article)
-
-        return super().PublishArticle(request, context)
+            request.article.time=str(pd.Timestamp('now', tz='Asia/Kolkata').date())
+            self.article_list.append(request.article)
+        return message.Result(status=status)
     
+
     def GetArticle(self, request, context):
-        return super().GetArticle(request, context)
+        def convert(x):
+            if(x==''):
+                return "<BLANK>"
+            else:
+                return x
+            
+        articles_to_send=message.ArticleList()
+        print(f"ARTICLES REQUEST FROM {request.client.id} FOR {convert(request.article._type)}, {convert(request.article.author)}, {convert(request.article.time)}")
+        try:
+            if(request.article.time != ""):
+                requested_time=datetime.datetime.strptime(request.article.time,"%d/%m/%Y").date()
+            for itr in self.article_list:
+                if(
+                    (request.article._type=='' or request.article._type==itr._type) and
+                    (request.article.author=='' or request.article.author==itr.author) and
+                    (request.article.time=='' or requested_time<=datetime.datetime.strptime(itr.time, '%Y-%m-%d'))
+                ):
+                    articles_to_send.articleList.append(itr)
+        except:
+            pass
+        return articles_to_send
 
 
     def status(self, code):

@@ -79,7 +79,7 @@ class Client:
             self.join_server(server_list[self.choosen_server_name])
         else:
             print('Entered Name Does not exist')
-            self.terminal_lock.acquire()
+            self.terminal_lock.release()
         
     
     def join_server(self, server_address):
@@ -184,7 +184,6 @@ class Client:
             return
         author=input("Enter Author's name: ")
         time=input("Enter start date (in DD/MM/YYYY): ") 
-        print("[ERROR] invalid start date entered")
         print("JOINED SERVERS ARE:")
         for server_name in self.joined_servers.keys():
             print(server_name)
