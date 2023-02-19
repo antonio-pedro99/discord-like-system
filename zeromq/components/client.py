@@ -78,9 +78,10 @@ class Client:
             print(args)
             return
         else:
-            print("------------------")
-            print(f"Type: {args['type']}\nAuthor: {args['author']}\nDate: {args['time']}")
-            print(f"Content: {args['content']}")
+            for arg in args:
+                print("------------------")
+                print(f"Type: {arg['type']}\nAuthor: {arg['author']}\nDate: {arg['time']}")
+                print(f"Content: {arg['content']}")
     
     def __join_server_success(self, status):
         print(f"JOINING REQUEST: {status}")
