@@ -92,7 +92,7 @@ class Server:
                             request = self.__server_socket.recv()
                             self.__handle_request(request)
                         except zmq.Again:
-                            print("No request")
+                            continue
         else:
             print(msg)
     
