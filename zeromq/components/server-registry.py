@@ -19,7 +19,6 @@ class ServerRegistry:
                     request = self.__registry_socket.recv()
                     self.__handle_request(request)
                 except zmq.Again:
-                    print("No Message")
                     continue
             
     def __setup(self):

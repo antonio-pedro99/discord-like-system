@@ -24,7 +24,7 @@ class Server:
         self.article_list=[]
         self.signal = signal.signal(signal.SIGINT, self.__on_exiting)
         self.signal = signal.signal(signal.SIGTERM, self.__on_exiting)
-        self.signal = signal.signal(signal.SIGTSTP, self.__on_exiting)
+        #self.signal = signal.signal(signal.SIGTSTP, self.__on_exiting)
    
     def __setup(self):
         msg = "CONNECTED Successfully"
@@ -92,7 +92,7 @@ class Server:
                             request = self.__server_socket.recv()
                             self.__handle_request(request)
                         except zmq.Again:
-                            print("No request")
+                            continue
         else:
             print(msg)
     
@@ -134,22 +134,23 @@ class Server:
 
             """  start_response = json.dumps({'request_type':'get_article', 'response':'START'})
             self.__server_socket.send_string(start_response) """
-            
+            list_response = []
             for itr in self.article_list:
                 if(
                     (args['type']=='' or args['type']==itr.type) and
                     (args['author']=='' or args['author']==itr.author) and
                     (args['time']=='' or args['time']<=itr.time)
                 ):
-                    response={
+                    response = {
                         'type': itr.type,
                         'author': itr.author,
                         'time': itr.time.strftime("%d/%m/%Y"),
                         'content': itr.content
                     }
-                    success_response = json.dumps({'request_type':'get_article', 'response':response})
-                    self.__server_socket.send_string(success_response)
-        except:
+                    list_response.append(response)
+            success_response = json.dumps({'request_type':'get_article', 'response': list_response})
+            self.__server_socket.send_string(success_response)
+        except zmq.error.ZMQError:
             
             fail_response = json.dumps({'request_type':'get_article', 'response':'FAIL'})
             self.__server_socket.send_string(fail_response)
