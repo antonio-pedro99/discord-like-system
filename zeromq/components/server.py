@@ -5,9 +5,12 @@ import json
 from port import get_new_port
 import datetime
 from article import Article
-
+import signal
+import sys
 cxt = zmq.Context()
 mutex = threading.Lock()
+
+
 
 class Server:
 
@@ -19,7 +22,9 @@ class Server:
         self.sock_addr = "127.0.0.1"
         self.sock_port = get_new_port()
         self.article_list=[]
-
+        self.signal = signal.signal(signal.SIGINT, self.__on_exiting)
+        self.signal = signal.signal(signal.SIGTERM, self.__on_exiting)
+        self.signal = signal.signal(signal.SIGTSTP, self.__on_exiting)
    
     def __setup(self):
         msg = "CONNECTED Successfully"
@@ -38,8 +43,8 @@ class Server:
         self.__server_socket.setsockopt(zmq.RCVTIMEO, 1000)
         addr = "tcp://{0}:{1}".format(self.sock_addr, self.sock_port)
         result = self.__server_socket.bind(addr)
-        
-        #print("LISTEN at", addr)
+       
+
     def __register(self)->bool:
         self.server_name =input("INPUT NAME OF THE SERVER: ")
         addr = "{0}:{1}".format(self.sock_addr, self.sock_port)
@@ -91,7 +96,28 @@ class Server:
         else:
             print(msg)
     
-    
+    def __on_exiting(self, signal, frame):
+        addr = "{0}:{1}".format(self.sock_addr, self.sock_port)
+        print(f"Server {addr} is being terminated")
+        
+        request = {
+            'request_type':'sleep_server',
+            'arguments': {
+                'name': self.server_name,
+                'address': addr,
+                'status': 'down'
+            }
+        }
+
+        self.__registry_socket.send_string(json.dumps(request))
+        
+        raw_response = self.__registry_socket.recv()
+        
+        response = json.loads(raw_response.decode()) 
+        if response['response'] == 'SUCCESS':
+            print(f"TERMINATING {self.server_name}")
+        sys.exit(0)
+
     def get_article(self, args):
         
         def convert(x):

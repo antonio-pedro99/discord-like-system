@@ -35,9 +35,21 @@ class ServerRegistry:
         if (request['request_type']=='register'):
             self.register_server(request['arguments'])
         elif (request['request_type']=='get_server_list'):
-          
             self.get_server_list(request['arguments'])
+        elif (request['request_type'] == 'sleep_server'):
+            self.__sleep_server(request['arguments'])
+    
+
+    def __sleep_server(self, request):
+        #if the server has been killed, remove it from the server list
+        print(f"SERVER KILL REQUEST FROM {request['address']} [ADDRESS]")
         
+        del self.server_list[request['name']]
+        
+        response = json.dumps({'request_type':'sleep_server', 'response': 'SUCCESS'})
+        
+        self.__registry_socket.send_string(response)
+
     def get_server_list(self, args):
         print(f"SERVER LIST REQUEST FROM {args['address']} [ADDRESS]")
     
