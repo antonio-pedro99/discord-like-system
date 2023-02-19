@@ -12,6 +12,19 @@ class ServerRegistryService(servicer.ServerRegistryServicer):
         self.current_registered=0
         self.server_list={}
         self.server_list_lock=Lock()
+    
+    def start(self):
+        try:
+            print("STARTING REGISTRY")
+            registry_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+            servicer.add_ServerRegistryServicer_to_server(ServerRegistryService(),registry_server)
+            print("REGISTRY STARTED")
+            registry_server.add_insecure_port('localhost:50001')
+            registry_server.start()
+            registry_server.wait_for_termination()
+        except KeyboardInterrupt:
+            print("------CLOSING REGISTRY------")
+            return
 
     def RegisterServer(self, request, context):
         self.server_list_lock.acquire()
@@ -32,19 +45,9 @@ class ServerRegistryService(servicer.ServerRegistryServicer):
         self.server_list_lock.release()
         return all_servers
 
-
 def main():
-    try:
-        print("STARTING REGISTRY")
-        registry_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        servicer.add_ServerRegistryServicer_to_server(ServerRegistryService(),registry_server)
-        print("REGISTRY STARTED")
-        registry_server.add_insecure_port('localhost:50001')
-        registry_server.start()
-        registry_server.wait_for_termination()
-    except KeyboardInterrupt:
-        print("------CLOSING REGISTRY------")
-        return
+    my_registry=ServerRegistryService()
+    my_registry.start()
 
 
 if __name__=='__main__':

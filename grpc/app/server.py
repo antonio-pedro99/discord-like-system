@@ -50,6 +50,7 @@ class ServerService(servicer.ServerServicer):
 
 
     def JoinServer(self, request, context):
+        self.client_lock.acquire()
         print(f'JOIN REQUEST FROM {request.id}')
         status='FAIL'
         try:
@@ -62,10 +63,12 @@ class ServerService(servicer.ServerServicer):
                     self.current_clients+=1
         except:
             pass
+        self.client_lock.release()
         return message.Result(status=status)
     
 
     def LeaveSever(self, request, context):
+        self.client_lock.acquire()
         print(f'LEAVE REQUEST FROM {request.id}')
         status='FAIL'
         try:
@@ -75,16 +78,19 @@ class ServerService(servicer.ServerServicer):
                 self.current_clients-=1
         except:
             pass
+        self.client_lock.release()
         return message.Result(status=status)
     
     
     def PublishArticle(self, request, context):
+        self.article_lock.acquire()
         print(f"ARTICLES PUBLISH FROM {request.client.id}")
         status='FAIL'
         if(request.client.id in self.CLIENTELE) and request.article.author!="" and request.article.content!="":
             status='SUCCESS'
             request.article.time=str(pd.Timestamp('now', tz='Asia/Kolkata').date())
             self.article_list.append(request.article)
+        self.article_lock.release()
         return message.Result(status=status)
     
 
@@ -94,7 +100,8 @@ class ServerService(servicer.ServerServicer):
                 return "<BLANK>"
             else:
                 return x
-            
+        
+        self.article_lock.acquire()
         articles_to_send=message.ArticleList()
         print(f"ARTICLES REQUEST FROM {request.client.id} FOR {convert(request.article._type)}, {convert(request.article.author)}, {convert(request.article.time)}")
         try:
@@ -104,11 +111,12 @@ class ServerService(servicer.ServerServicer):
                 if(
                     (request.article._type=='' or request.article._type==itr._type) and
                     (request.article.author=='' or request.article.author==itr.author) and
-                    (request.article.time=='' or requested_time<=datetime.datetime.strptime(itr.time, '%Y-%m-%d'))
+                    (request.article.time=='' or requested_time<=datetime.datetime.strptime(itr.time, "%Y-%m-%d").date())
                 ):
                     articles_to_send.articleList.append(itr)
         except:
             pass
+        self.article_lock.release()
         return articles_to_send
 
 

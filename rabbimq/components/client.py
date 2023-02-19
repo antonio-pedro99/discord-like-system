@@ -139,12 +139,7 @@ class Client:
             print("[ERROR] Invalid Type")
             return
         author=input("Enter Author's name: ")
-        # if(author==""):
-        #     print("[ERROR] Author's name cannot be empty")
-        #     return
         content=input("Enter Content: ")
-        # if(content==""):
-        #     print("[ERROR] Content cannnot be empty")
         print("JOINED SERVERS ARE:")
         for server_name in self.joined_servers.keys():
             print(server_name)
