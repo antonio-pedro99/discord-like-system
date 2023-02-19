@@ -2,14 +2,13 @@ import zmq
 import threading
 import uuid
 import json
-from port import get_new_port
+from .port import get_new_port
 import datetime
-from article import Article
+from .article import Article
 import signal
 import sys
 cxt = zmq.Context()
 mutex = threading.Lock()
-
 
 
 class Server:
@@ -24,7 +23,6 @@ class Server:
         self.article_list=[]
         self.signal = signal.signal(signal.SIGINT, self.__on_exiting)
         self.signal = signal.signal(signal.SIGTERM, self.__on_exiting)
-        #self.signal = signal.signal(signal.SIGTSTP, self.__on_exiting)
    
     def __setup(self):
         msg = "CONNECTED Successfully"
@@ -42,7 +40,7 @@ class Server:
         self.__server_socket.setsockopt(zmq.SNDTIMEO, 1000)
         self.__server_socket.setsockopt(zmq.RCVTIMEO, 1000)
         addr = "tcp://{0}:{1}".format(self.sock_addr, self.sock_port)
-        result = self.__server_socket.bind(addr)
+        self.__server_socket.bind(addr)
        
 
     def __register(self)->bool:
@@ -98,6 +96,7 @@ class Server:
     
     def __on_exiting(self, signal, frame):
         addr = "{0}:{1}".format(self.sock_addr, self.sock_port)
+        
         print(f"Server {addr} is being terminated")
         
         request = {
@@ -132,8 +131,6 @@ class Server:
             if(args['time'] != ""):
                 args['time']=datetime.datetime.strptime(args['time'],"%d/%m/%Y").date()
 
-            """  start_response = json.dumps({'request_type':'get_article', 'response':'START'})
-            self.__server_socket.send_string(start_response) """
             list_response = []
             for itr in self.article_list:
                 if(
@@ -155,10 +152,6 @@ class Server:
             fail_response = json.dumps({'request_type':'get_article', 'response':'FAIL'})
             self.__server_socket.send_string(fail_response)
         
-        """  finally:
-        
-            end_response = json.dumps({'request_type':'get_article', 'response':'END'})
-            self.__server_socket.send_string(end_response) """
 
     def publish_article(self, args):
         print(f"ARTICLES PUBLISH FROM {args['unique_id']}")
@@ -200,6 +193,3 @@ class Server:
             pass
         response =json.dumps({'request_type':'join_server', 'response':status})
         self.__server_socket.send_string(response)
-
-server = Server()
-server.start()

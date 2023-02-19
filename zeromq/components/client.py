@@ -3,7 +3,6 @@ import threading
 from threading import Lock, Thread
 import uuid
 import json
-from components.port import get_new_port
 from time import sleep
 cxt = zmq.Context()
 mutex = threading.Lock()

@@ -64,8 +64,3 @@ class ServerRegistry:
             self.server_list[args['name']]=args['address']
             self.current_registered+=1
         self.__registry_socket.send_string(json.dumps({'request_type':'register', 'response':status}))
-
-
-registry = ServerRegistry()
-
-registry.start()
