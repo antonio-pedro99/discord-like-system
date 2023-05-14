@@ -1,1 +1,1 @@
-# distributed-system-assignments
+# Distributed System Assignment 1 - Communication
